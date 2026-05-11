@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ailabs Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter, Orbitron, & Fira Code -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        tech: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        neonBlue: '#00ffd5',
+                        neonOrange: '#FF9900',
+                        deepDark: '#050110',
+                        accentPurple: '#7c3aed'
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow-pulse': 'glowPulse 2s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'neon-flicker': 'flicker 3s linear infinite',
+                    },
+                    keyframes: {
+                        glowPulse: {
+                            '0%, 100%': { boxShadow: '0 0 5px #00ffd5', filter: 'brightness(1)' },
+                            '50%': { boxShadow: '0 0 20px #00ffd5', filter: 'brightness(1.2)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        flicker: {
+                             '0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100%': {
+                                opacity: 0.99,
+                                filter: 'drop-shadow(0 0 1px rgba(0,255,213,1))'
+                            },
+                            '20%, 21.999%, 63%, 63.999%, 65%, 69.999%': {
+                                opacity: 0.4,
+                                filter: 'none'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            /* Fallback gradient jika video gagal dimuat */
+            background: #050110 radial-gradient(circle at center, #1a0b2e 0%, #050110 100%); 
+            overflow-x: hidden;
+            text-shadow: 0 2px 8px rgba(0,0,0,1); 
+            color: white;
+            /* Hapus background-image gambar */
+        }
+
+        /* --- VIDEO BACKGROUND STYLES --- */
+        #bg-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2; /* Letakkan di paling belakang */
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover; /* Pastikan video menutupi seluruh area */
+            opacity: 0.8; /* Sesuaikan opasitas jika video terlalu terang */
+        }
+
+        .bg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 15% 15%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 85% 85%, rgba(255, 153, 0, 0.05) 0%, transparent 50%),
+                        rgba(0, 0, 0, 0.1); /* Jauh lebih transparan */
+            z-index: -1;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.05); /* Hampir 100% transparan */
+            backdrop-filter: blur(4px); /* Blur dikurangi drastis agar video jelas */
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-top: 1px solid rgba(255, 255, 255, 0.2); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- UI DESKTOP-STYLE FORCE TABS --- */
+        .tab-btn {
+            position: relative;
+            padding: 8px 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            /* Efek 3D Default (sebelum aktif) */
+            text-shadow: 
+                0px 1px 0px rgba(255, 255, 255, 0.2),
+                0px 2px 0px rgba(0, 0, 0, 0.8),
+                0px 3px 2px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2); /* Tombol tab lebih transparan */
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex: 1;
+            min-width: 110px;
+            max-width: 200px;
+        }
+        @media (min-width: 768px) {
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+                border-width: 2px;
+                min-width: 140px;
+            }
+        }
+
+        /* Base Active Class */
+        .tab-btn.active {
+            animation: flicker 4s linear infinite;
+        }
+
+        /* --- UNIQUE 3D TAB STYLES --- */
+        /* Tab: APPLICATIONS */
+        #tab-apps {
+            color: rgba(0, 255, 213, 0.9);
+            border-color: rgba(0, 255, 213, 0.4);
+        }
+        #tab-apps:hover { 
+            color: #00ffd5; border-color: #00ffd5; background: rgba(0, 255, 213, 0.1); 
+            box-shadow: 0 0 10px rgba(0, 255, 213, 0.3);
+            transform: translateY(-2px);
+        }
+        #tab-apps.active {
+            color: #ffffff; border-color: #00ffd5; background: rgba(0, 255, 213, 0.15);
+            box-shadow: 0 0 15px rgba(0, 255, 213, 0.5), inset 0 0 10px rgba(0, 255, 213, 0.3);
+            /* Efek 3D Neon Blue saat Aktif */
+            text-shadow: 
+                0 1px 0 #00cca0,
+                0 2px 0 #00997a,
+                0 3px 0 #006652,
+                0 4px 5px rgba(0, 255, 213, 0.8),
+                0 0 10px rgba(0, 255, 213, 1);
+            transform: translateY(1px); /* Efek ditekan */
+        }
+
+        /* Tab: APPLICATIONS 2 */
+        #tab-apps2 {
+            color: rgba(167, 139, 250, 0.9); 
+            border-color: rgba(124, 58, 237, 0.4);
+        }
+        #tab-apps2:hover { 
+            color: #c4b5fd; border-color: #a78bfa; background: rgba(124, 58, 237, 0.1); 
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-apps2.active {
+            color: #ffffff; border-color: #8b5cf6; background: rgba(124, 58, 237, 0.2);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.6), inset 0 0 10px rgba(139, 92, 246, 0.3);
+            /* Efek 3D Purple saat Aktif */
+            text-shadow: 
+                0 1px 0 #6d28d9,
+                0 2px 0 #5b21b6,
+                0 3px 0 #4c1d95,
+                0 4px 5px rgba(139, 92, 246, 0.8),
+                0 0 10px rgba(139, 92, 246, 1);
+            transform: translateY(1px);
+        }
+
+        /* Tab: VIBEAI LABS */
+        #tab-vibeai {
+            color: rgba(244, 114, 182, 0.9);
+            border-color: rgba(236, 72, 153, 0.4);
+        }
+        #tab-vibeai:hover { 
+            color: #fbcfe8; border-color: #f472b6; background: rgba(236, 72, 153, 0.1); 
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-vibeai.active {
+            color: #ffffff; border-color: #ec4899; background: rgba(236, 72, 153, 0.2);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.6), inset 0 0 10px rgba(236, 72, 153, 0.3);
+             /* Efek 3D Pink saat Aktif */
+            text-shadow: 
+                0 1px 0 #be185d,
+                0 2px 0 #9d174d,
+                0 3px 0 #831843,
+                0 4px 5px rgba(236, 72, 153, 0.8),
+                0 0 10px rgba(236, 72, 153, 1);
+            transform: translateY(1px);
+        }
+
+        /* Tab: TOOLKIT */
+        #tab-toolkit {
+            color: rgba(250, 204, 21, 0.9);
+            border-color: rgba(234, 179, 8, 0.4);
+        }
+        #tab-toolkit:hover { 
+            color: #fef08a; border-color: #facc15; background: rgba(234, 179, 8, 0.1); 
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-toolkit.active {
+            color: #ffffff; border-color: #eab308; background: rgba(234, 179, 8, 0.2);
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.6), inset 0 0 10px rgba(234, 179, 8, 0.3);
+            /* Efek 3D Yellow saat Aktif */
+            text-shadow: 
+                0 1px 0 #a16207,
+                0 2px 0 #854d0e,
+                0 3px 0 #713f12,
+                0 4px 5px rgba(234, 179, 8, 0.8),
+                0 0 10px rgba(234, 179, 8, 1);
+            transform: translateY(1px);
+        }
+
+        /* Tab: TUTORIALS */
+        #tab-tutorial {
+            color: rgba(255, 153, 0, 0.9);
+            border-color: rgba(255, 153, 0, 0.4);
+        }
+        #tab-tutorial:hover { 
+            color: #ffedd5; border-color: #FF9900; background: rgba(255, 153, 0, 0.1); 
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-tutorial.active {
+            color: #ffffff; border-color: #f97316; background: rgba(255, 153, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.6), inset 0 0 10px rgba(255, 153, 0, 0.3);
+            /* Efek 3D Orange saat Aktif */
+            text-shadow: 
+                0 1px 0 #c2410c,
+                0 2px 0 #9a3412,
+                0 3px 0 #7c2d12,
+                0 4px 5px rgba(255, 153, 0, 0.8),
+                0 0 10px rgba(255, 153, 0, 1);
+            transform: translateY(1px);
+        }
+
+        /* Tab: PROMPT FRAMEWORK */
+        #tab-framework {
+            color: rgba(96, 165, 250, 0.9);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        #tab-framework:hover { 
+            color: #bfdbfe; border-color: #60a5fa; background: rgba(59, 130, 246, 0.1); 
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-framework.active {
+            color: #ffffff; border-color: #3b82f6; background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6), inset 0 0 10px rgba(59, 130, 246, 0.3);
+             /* Efek 3D Blue saat Aktif */
+            text-shadow: 
+                0 1px 0 #1d4ed8,
+                0 2px 0 #1e40af,
+                0 3px 0 #1e3a8a,
+                0 4px 5px rgba(59, 130, 246, 0.8),
+                0 0 10px rgba(59, 130, 246, 1);
+            transform: translateY(1px);
+        }
+
+        /* Tab: 42 CAMERA MOVEMENTS */
+        #tab-camera {
+            color: rgba(52, 211, 153, 0.9); 
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        #tab-camera:hover { 
+            color: #a7f3d0; border-color: #34d399; background: rgba(16, 185, 129, 0.1); 
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); 
+            transform: translateY(-2px);
+        }
+        #tab-camera.active {
+            color: #ffffff; border-color: #10b981; background: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(16, 185, 129, 0.3);
+            /* Efek 3D Green saat Aktif */
+            text-shadow: 
+                0 1px 0 #047857,
+                0 2px 0 #065f46,
+                0 3px 0 #064e3b,
+                0 4px 5px rgba(16, 185, 129, 0.8),
+                0 0 10px rgba(16, 185, 129, 1);
+            transform: translateY(1px);
+        }
+
+
+        .app-card {
+            background: rgba(0, 0, 0, 0.05); /* Kotak aplikasi sangat tipis hitamnya */
+            backdrop-filter: blur(2px); /* Blur tipis agar text tetap terbaca */
+            border: 2px solid rgba(0, 255, 213, 0.3); 
+            box-shadow: 0 0 15px rgba(0, 255, 213, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .app-card:hover {
+            transform: translateY(-5px);
+            background: rgba(0, 255, 213, 0.1); 
+            border-color: #00ffd5;
+            box-shadow: 0 0 30px rgba(0, 255, 213, 0.4), inset 0 0 10px rgba(0, 255, 213, 0.1);
+        }
+
+        .tutorial-card, .framework-card {
+            background: rgba(0, 0, 0, 0.05); /* Sama seperti app-card */
+            border: 1px solid rgba(255, 153, 0, 0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(2px);
+        }
+        .tutorial-card:hover, .framework-card:hover {
+            border-color: #FF9900;
+            box-shadow: 0 0 20px rgba(255, 153, 0, 0.2);
+            transform: translateY(-4px);
+        }
+
+        /* Audio Visualizer Style */
+        .v-bar {
+            width: 4px;
+            background: #00ffd5;
+            border-radius: 2px 2px 0 0;
+            box-shadow: 0 0 5px #00ffd5;
+            transition: height 0.08s ease;
+        }
+
+        /* Explorer Style - FORCED SIDE-BY-SIDE DESKTOP LOOK */
+        .explorer-container {
+            background: rgba(15, 15, 25, 0.1); /* Background lebih jernih */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row !important; 
+            height: 60vh;
+            min-height: 450px;
+            max-height: 600px;
+            backdrop-filter: blur(4px);
+        }
+        .explorer-sidebar { width: 35%; border-right: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; }
+        .explorer-main { flex: 1; width: 65%; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.05); }
+        .file-item { padding: 10px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.7); font-size: 0.7rem; }
+        @media (min-width: 768px) { .file-item { font-size: 0.8rem; padding: 12px 16px; gap: 12px; } }
+        .file-item:hover { background: rgba(0, 255, 213, 0.1); color: #00ffd5; }
+        .file-item.active { background: rgba(0, 255, 213, 0.15); color: #00ffd5; border-left: 4px solid #00ffd5; }
+        .txt-header { background: rgba(255, 255, 255, 0.05); padding: 8px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; color: #e2e8f0; font-size: 0.7rem; font-weight: 700; }
+        .txt-content { flex: 1; padding: 16px 20px; color: #f8fafc; font-family: 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.6; overflow-y: auto; white-space: pre-wrap; background: transparent; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }        @media (min-width: 768px) {
+            .txt-header { padding: 10px 20px; font-size: 0.75rem; }
+            .txt-content { padding: 24px 32px; font-size: 0.95rem; line-height: 1.8; }
+        }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: #00ffd5; color: black; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 200; left: 50%; bottom: 30px; transform: translateX(-50%); font-family: 'Orbitron', sans-serif; font-weight: bold; box-shadow: 0 0 20px rgba(0, 255, 213, 0.5); text-shadow: none; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 213, 0.5); }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex items-center justify-center p-2 md:p-4 selection:bg-neonOrange selection:text-black">
+
+    <!-- VIDEO BACKGROUND -->
+    <!-- Ganti 'background-video.mp4' dengan nama file videomu (misal: bg.mp4) -->
+    <!-- Atribut playsinline penting untuk mobile (iOS) -->
+    <video id="bg-video" autoplay loop muted playsinline>
+        <source src="background-video.mp4" type="video/mp4">
+        <!-- Tambahkan sumber webm jika ada untuk kompatibilitas browser yang lebih baik -->
+        <!-- <source src="background-video.webm" type="video/webm"> -->
+        Browser kamu tidak mendukung video background.
+    </video>
+
+    <!-- AUDIO PLAYER -->
+    <audio id="bg-audio" loop crossorigin="anonymous">
+        <source src="background-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="bg-overlay"></div>
+    <div id="toast">Prompt Berhasil Disalin!</div>
+
+    <!-- 1. LOGIN PAGE -->
+    <div id="login-page" class="w-full max-w-md relative z-10 px-2">
+        <form id="login-form" class="glass-panel rounded-2xl p-6 md:p-10 relative overflow-hidden">
+            <div class="text-center mb-8 md:mb-12">
+                <div class="flex justify-center items-center gap-3 md:gap-4 mb-3">
+                    <img src="https://i.ibb.co.com/4nFbhTSN/Desain-tanpa-judul-20260428-191052-0000.png" alt="Ailabs Logo" class="w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-[0_0_15px_rgba(0,255,213,0.5)]">
+                    <h1 class="text-4xl md:text-5xl font-tech font-bold text-white tracking-wider leading-tight text-left">
+                        <span class="text-neonOrange">AI</span>LABS<br>
+                        <span class="text-2xl md:text-3xl tracking-[0.2em] text-white">WORKSPACE</span>
+                    </h1>
+                </div>
+                <div class="h-px w-32 bg-gradient-to-r from-transparent via-neonBlue to-transparent mx-auto mb-6"></div>
+                <span class="inline-block bg-black/20 border border-white/20 text-neonBlue text-xs font-bold tracking-[0.25em] uppercase px-3 py-1 rounded-full">VIP Prime Access</span>
+            </div>
+            
+            <div class="mb-8">
+                <p class="text-xs text-neonBlue uppercase tracking-widest mb-2 ml-1 font-bold">User ID</p>
+                <div class="bg-black/20 border border-white/20 rounded-lg p-3 flex items-center justify-between">
+                    <span class="font-mono text-white font-bold tracking-wide text-lg">bangpro</span>
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                </div>
+            </div>
+            
+            <div class="mb-10 text-center">
+                <label class="block text-xs text-neonOrange uppercase tracking-widest mb-4 font-bold">Security Token</label>
+                <input type="password" id="password" name="password" placeholder="ENTER CODE" required
+                       class="w-full p-3 md:p-4 border border-white/20 bg-black/20 rounded-lg text-center text-lg md:text-xl font-tech tracking-widest text-neonBlue focus:border-neonOrange outline-none">
+            </div>
+            
+            <button type="submit" class="w-full bg-transparent border-2 border-neonBlue text-neonBlue py-3 md:py-4 rounded-lg font-bold text-base md:text-lg tracking-wider hover:bg-neonBlue hover:text-black transition-all">INITIALIZE</button>
+            <p id="error-message" class="text-red-400 text-center mt-6 text-xs font-mono min-h-[20px]"></p>
+        </form>
+    </div>
+
+    <!-- 2. PORTAL DASHBOARD -->
+    <div id="portal-page" class="w-full max-w-7xl md:p-4 hidden relative z-10">
+        <div class="glass-panel rounded-2xl md:rounded-3xl p-4 md:p-10">
+            
+            <!-- HEADER (Forced Horizontal Desktop Mode) -->
+            <div class="mb-6 md:mb-8 border-b border-white/10 pb-4 md:pb-6 flex flex-row justify-between items-end gap-2 md:gap-6 w-full">
+                <div class="flex-shrink-0 flex items-center gap-2 md:gap-3">
+                    <!-- LOGO SEBAGAI LINK ADMIN -->
+                    <a href="https://gemini.google.com/share/c8dbf606a9df" target="_blank" class="cursor-pointer transition-all hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(255,153,0,0.8)]" title="Akses Admin">
+                        <img src="https://i.ibb.co.com/4nFbhTSN/Desain-tanpa-judul-20260428-191052-0000.png" alt="Ailabs Logo" class="w-8 h-8 md:w-12 md:h-12 object-contain drop-shadow-[0_0_10px_rgba(0,255,213,0.5)]">
+                    </a>
+                    <h1 class="text-[14px] sm:text-xl md:text-3xl font-bold text-white tracking-tight font-tech mb-0 leading-tight whitespace-nowrap">
+                        <span class="text-neonOrange">
+                            AILABS WORKSPACE
+                        </span>
+                    </h1>
+                </div>
+                
+                <div class="flex flex-col items-end gap-2 md:gap-3 w-auto">
+                    <div class="flex items-center justify-end gap-2 md:gap-4 flex-wrap">
+                        
+                        <!-- FACEBOOK LINK -->
+                        <div class="flex items-center mr-1 md:mr-2">
+                            <span class="text-[7px] md:text-[10px] text-neonBlue font-bold mr-1 md:mr-2 animate-pulse hidden md:block">Follow dong</span>
+                            <a href="https://www.facebook.com/share/1DxuKkDdFm/" target="_blank" class="text-blue-500 hover:text-white hover:scale-110 transition-all duration-300" title="Follow Bang Pro">
+                                <svg class="w-[14px] h-[14px] md:w-[22px] md:h-[22px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <!-- Sound Control + Visualizer -->
+                        <div class="flex flex-col items-center gap-1 md:gap-2 mr-1 md:mr-2">
+                            <div class="flex items-center gap-1 md:gap-2 bg-black/20 border border-white/10 px-2 py-1 md:px-3 rounded-lg">
+                                <button id="sound-toggle" class="text-neonBlue hover:text-white transition-colors">
+                                    <svg id="icon-sound-on" class="w-[12px] h-[12px] md:w-[16px] md:h-[16px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    <svg id="icon-sound-off" class="hidden w-[12px] h-[12px] md:w-[16px] md:h-[16px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                                </button>
+                                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5" class="w-10 md:w-16 h-1 md:h-auto accent-neonBlue">
+                            </div>
+                            <!-- Visualizer Bars -->
+                            <div id="visualizer" class="flex items-end justify-center gap-[1px] md:gap-[2px] h-2 md:h-3 w-full opacity-60">
+                                <div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div><div class="v-bar w-[2px] md:w-[4px] h-[2px]"></div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <span class="text-[7px] md:text-[9px] text-gray-300 uppercase tracking-widest block mb-0 md:mb-0.5 font-bold">Status</span>
+                            <span class="text-neonBlue font-tech text-[8px] md:text-xs font-bold">ACTIVE PRIME</span>
+                        </div>
+                        <button id="logout-button" class="text-[8px] md:text-[10px] text-red-400 border border-red-500/40 px-2 py-1 md:px-4 md:py-1.5 rounded font-bold hover:bg-red-500 hover:text-white transition-all">LOGOUT</button>
+                    </div>
+                    <div class="bg-black/20 border border-white/10 rounded-lg px-2 py-1 md:px-3 md:py-2 flex items-center gap-2 md:gap-3">
+                        <span class="relative flex h-1.5 w-1.5 md:h-2 md:w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-1.5 w-1.5 md:h-2 md:w-2 bg-green-500"></span>
+                        </span>
+                        <span class="text-[8px] md:text-[10px] text-white font-bold uppercase tracking-wide">Online</span>
+                        <div class="flex gap-2 md:gap-3 text-[8px] md:text-[10px] font-mono font-bold text-gray-300">
+                            <span>🇮🇩 <span id="srv1-count">0</span></span>
+                            <span>🇺🇸 <span id="srv2-count">0</span></span>
+                            <span>🇸🇬 <span id="srv3-count">0</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB NAVIGATION -->
+            <div class="flex flex-wrap gap-2 md:gap-4 mb-6 md:mb-10 border-b border-white/5 pb-4">
+                <button onclick="switchTab('apps')" id="tab-apps" class="tab-btn active">APPLICATIONS</button>
+                <button onclick="switchTab('apps2')" id="tab-apps2" class="tab-btn">APPLICATIONS 2</button>
+                <button onclick="switchTab('vibeai')" id="tab-vibeai" class="tab-btn">VIBEAI LABS</button>
+                <button onclick="switchTab('toolkit')" id="tab-toolkit" class="tab-btn">
+                    TOOLKIT
+                </button>
+                <button onclick="switchTab('tutorial')" id="tab-tutorial" class="tab-btn">TUTORIALS</button>
+                <button onclick="switchTab('framework')" id="tab-framework" class="tab-btn">PROMPT FRAMEWORK</button>
+                <button onclick="switchTab('camera')" id="tab-camera" class="tab-btn text-neonBlue border-neonBlue/30 hover:border-neonBlue">42 CAMERA MOVEMENTS</button>
+            </div>
+
+            <!-- TAB CONTENT: APPLICATIONS (Forced 2 Columns Minimum) -->
+            <div id="content-apps">
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 mb-12">
+                    
+                    <a href="https://gemini.google.com/share/6e5e1369b3fb" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                       <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Scene Pro</h3>
+                       <p class="text-[9px] md:text-xs text-gray-200 font-medium">Visual scene generator.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/8d40127f7175" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group border-l-2 md:border-l-4 border-l-neonBlue/50">
+                        <h3 class="text-[13px] md:text-2xl font-bold text-white group-hover:text-neonBlue transition-colors mb-1 md:mb-2">AIlabs Voice Over V2</h3>
+                        <p class="text-[9px] md:text-sm text-gray-200 leading-relaxed font-medium">Advanced Audio Synthesis.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/49a52a6c4734" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs UMKM</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Solusi cerdas bisnis.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/3cee1998a001" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Affiliate</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Program mitra eksklusif.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/af5518ea9706" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Cartoon</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Style kartun instan.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/c979a3417d29" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Restore Image</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Perbaiki foto lama.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/a994fe709148" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Auto Caption</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Subtitle otomatis.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/663b42f003d0" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Elite Prompt Lab</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Optimasi teks AI.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/cb7e1012f4f9" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Flux</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Generasi gambar ultra.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/fa5bd00de5dd" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Ramadhan</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Edisi spesial berkah.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/adcc08ee9a8f" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Morp</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Transformasi visual halus.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/8def0ff08786" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Storyboard</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Visualisasi alur cerita.</p>
+                    </a>
+
+                    <a href="https://gemini.google.com/share/94a493208c91" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">DNA</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Analisis struktur data AI.</p>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: APPLICATIONS 2 -->
+            <div id="content-apps2" class="hidden">
+                 <div class="mb-4 md:mb-6 flex items-center gap-2 md:gap-4">
+                     <h2 class="text-lg md:text-3xl font-tech font-bold text-white tracking-[0.1em] md:tracking-[0.2em]">APPLICATIONS <span class="text-neonBlue">2</span></h2>
+                     <div class="h-[1px] md:h-[2px] flex-1 bg-gradient-to-r from-neonBlue to-transparent"></div>
+                 </div>
+                 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 mb-12">
+                     <a href="https://gemini.google.com/share/dff84aeea426" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                         <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">DNA PRO</h3>
+                         <p class="text-[9px] md:text-xs text-gray-200 font-medium">Versi pro analisis struktur data.</p>
+                     </a>
+                 </div>
+            </div>
+
+            <!-- TAB CONTENT: VIBEAI LABS -->
+            <div id="content-vibeai" class="hidden">
+                 <div class="mb-4 md:mb-6 flex items-center gap-2 md:gap-4">
+                     <h2 class="text-lg md:text-3xl font-tech font-bold text-white tracking-[0.1em] md:tracking-[0.2em]">VIBEAI <span class="text-neonBlue">LABS</span></h2>
+                     <div class="h-[1px] md:h-[2px] flex-1 bg-gradient-to-r from-neonBlue to-transparent"></div>
+                 </div>
+                 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 mb-12">
+                     <a href="https://opal.google/app/1MwZb47W07qKQ2wT1AaARxYo1_M3TVlRM" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                         <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Motion</h3>
+                         <p class="text-[9px] md:text-xs text-gray-200 font-medium">Platform generasi video motion.</p>
+                     </a>
+                     <a href="https://opal.google/app/1AIOHY0nkuOfslC5rpRxpnneQlJnK_c_U" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative">
+                         <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Control Motion</h3>
+                         <p class="text-[9px] md:text-xs text-gray-200 font-medium">Kontrol presisi pergerakan video.</p>
+                     </a>
+                 </div>
+            </div>
+
+            <!-- TAB CONTENT: TOOLKIT -->
+            <div id="content-toolkit" class="hidden">
+                 <div class="mb-4 md:mb-6 flex items-center gap-2 md:gap-4">
+                     <h2 class="text-lg md:text-3xl font-tech font-bold text-white tracking-[0.1em] md:tracking-[0.2em]">TOOLS <span class="text-neonBlue">KREATIF</span></h2>
+                     <div class="h-[1px] md:h-[2px] flex-1 bg-gradient-to-r from-neonBlue to-transparent"></div>
+                 </div>
+                 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 mb-12">
+                     <a href="https://audio-modifier.vercel.app/" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                         <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Manipulasi Audio</h3>
+                         <p class="text-[9px] md:text-xs text-gray-200 font-medium">Advanced audio processing.</p>
+                     </a>
+                     <a href="https://ailabs-cc.vercel.app/" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                         <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Capcut</h3>
+                         <p class="text-[9px] md:text-xs text-gray-200 font-medium">Video editing suite.</p>
+                     </a>
+                     <a href="https://gemini.google.com/share/520c6663d2a0" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">EncodeBase64</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Data encryption tool.</p>
+                    </a>
+                    <a href="https://gemini.google.com/share/01704ae5fbbf" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">WM Remover</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Watermark removal AI.</p>
+                    </a>
+                    <a href="https://masteraudio.pro" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Music Mastering</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Audio polish pro.</p>
+                    </a>
+                    <a href="https://gemini.google.com/share/6a3f36032542" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Suno Style</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Generator gaya musik.</p>
+                    </a>
+                    <a href="https://upscale-image.vercel.app/" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Upscale Image</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Tingkatkan resolusi gambar.</p>
+                    </a>
+                    <a href="https://ailabs-speed.vercel.app/" target="_blank" class="block app-card p-3 md:p-6 rounded-xl md:rounded-2xl group relative overflow-hidden">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-neonBlue transition-colors">Ailabs Speed</h3>
+                        <p class="text-[9px] md:text-xs text-gray-200 font-medium">Akselerasi kecepatan.</p>
+                    </a>
+                 </div>
+            </div>
+
+            <!-- TAB CONTENT: TUTORIAL -->
+            <div id="content-tutorial" class="hidden">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
+                    <div class="tutorial-card p-4 md:p-6 rounded-xl md:rounded-2xl flex flex-col justify-between">
+                        <h3 class="text-[14px] md:text-xl font-bold text-white font-tech mb-2 md:mb-4">Desain Cover AI</h3>
+                        <p class="text-[10px] md:text-sm text-gray-300 mb-4 md:mb-6">Panduan pembuatan cover profesional.</p>
+                        <a href="https://gemini.google.com/share/b6ce96b95d5a" target="_blank" class="text-[9px] md:text-base bg-neonOrange/20 border border-neonOrange text-neonOrange py-2 md:py-3 rounded-lg md:rounded-xl text-center hover:bg-neonOrange hover:text-black transition-all font-bold">BUKA TUTORIAL</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: PROMPT FRAMEWORK (Forced Side-by-Side) -->
+            <div id="content-framework" class="hidden">
+                <div class="explorer-container">
+                    <div class="explorer-sidebar overflow-y-auto" id="file-list"></div>
+                    <div class="explorer-main">
+                        <div class="txt-header">
+                            <span id="active-filename" class="truncate max-w-[60%]">Pilih file...</span>
+                            <button onclick="copyCurrentPrompt()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 md:px-3 rounded text-[8px] md:text-[10px] font-bold tracking-wide transition-colors">SALIN</button>
+                        </div>
+                        <div class="txt-content" id="txt-display">Pilih prompt dari menu samping.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: CAMERA -->
+            <div id="content-camera" class="hidden">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
+                    <a href="https://aishotstudio.com/42-camera-movements-ai-prompts/" target="_blank" class="framework-card p-4 md:p-6 rounded-xl md:rounded-2xl border border-neonBlue/30 block group">
+                        <h3 class="text-[13px] md:text-xl font-bold text-white font-tech mb-2 md:mb-4 group-hover:text-neonBlue">42 Camera Movements</h3>
+                        <p class="text-[10px] md:text-sm text-gray-300 mb-3 md:mb-4">Panduan kamera sinematik.</p>
+                        <button class="w-full py-1.5 md:py-2 rounded-lg text-[9px] md:text-xs font-bold border border-neonBlue text-neonBlue group-hover:bg-neonBlue group-hover:text-black transition-all">OPEN GUIDE</button>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const userDatabase = { "bangpro": ["8F4K", "L1P9", "A7B0", "Z3H5", "Q6J2", "T9R8", "E5Y1", "W4I7", "U2O6", "P0D3", "S5G4", "V7K9", "C2N1", "X8M0", "B3L6", "M9H2", "F6J8", "G1R5", "I4T7", "N0Y3", "K7U2", "R8P6", "Y3D9", "H5S1", "O4W7", "D9G0", "J2Z5", "2K8F", "6L1A", "1N4Q", "5T7W", "0E2U", "3P8O", "7S3C", "9V6X", "4B9M", "R1J7", "Y6H3", "O2S9", "D5W0", "K8Z4", "T3F1", "I7G6", "P4N2", "U0B8", "W9V5", "E6C3", "M2X0", "C8L7", "G4Q9", "5J1P", "Z8K4", "7G3B", "C0X9", "R2Y5", "V6T1", "9E4H", "F3S7", "Q0L6", "I8W2", "4D9N", "B5M0", "U1A7", "O3F8", "6H2V", "T9G5", "K4Z1", "Y7R3", "P2C9", "E0J4", "8V6M", "1S9L", "3B7K", "N5W0", "M2Q8", "G1P3", "J4R9", "A6E2", "X0Y7", "L7D5", "S8I1", "F4T0", "H2B6", "W9O4", "Z5U3", "V1K8", "C3N7", "R6J2", "E9G4", "T5Q1", "Y0F9", "B7P5", "I2X3", "K8A0", "O4L6", "U3M7", "D9S2", "G5H1", "N0C8", "M1W4", "admin123"] };
+        const frameworkFiles = [{ name: "berbicara_elegan.txt", content: "AI character speaks with an elegant, calm, and professional tone..."}, { name: "bernyanyi_berjalan.txt", content: "Character is singing while walking forward at a natural, steady pace..."}];
+
+        let currentPromptContent = "";
+        const bgAudio = document.getElementById("bg-audio");
+        bgAudio.volume = 0.5;
+
+        let audioCtx, analyser, dataArray, isInit = false;
+
+        function initVisualizer() {
+            if(isInit) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const src = audioCtx.createMediaElementSource(bgAudio);
+                analyser = audioCtx.createAnalyser();
+                src.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                analyser.fftSize = 64;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                isInit = true;
+                draw();
+            } catch(e) {}
+        }
+
+        function draw() {
+            if(!analyser) return;
+            requestAnimationFrame(draw);
+            analyser.getByteFrequencyData(dataArray);
+            const bars = document.querySelectorAll('.v-bar');
+            bars.forEach((bar, i) => {
+                const h = (dataArray[i] / 255) * 12;
+                bar.style.height = `${Math.max(2, h)}px`;
+            });
+        }
+
+        function switchTab(tab) {
+            ['content-apps', 'content-apps2', 'content-vibeai', 'content-toolkit', 'content-tutorial', 'content-framework', 'content-camera'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            ['tab-apps', 'tab-apps2', 'tab-vibeai', 'tab-toolkit', 'tab-tutorial', 'tab-framework', 'tab-camera'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            const contentEl = document.getElementById(`content-${tab}`);
+            const tabEl = document.getElementById(`tab-${tab}`);
+            if (contentEl) contentEl.classList.remove('hidden');
+            if (tabEl) tabEl.classList.add('active');
+        }
+
+        function initExplorer() {
+            const list = document.getElementById('file-list');
+            if(!list) return;
+            list.innerHTML = '';
+            frameworkFiles.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `📄 ${file.name}`;
+                div.onclick = (e) => {
+                    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    
+                    document.getElementById('active-filename').innerText = file.name;
+                    document.getElementById('txt-display').innerText = file.content;
+                    currentPromptContent = file.content;
+                };
+                list.appendChild(div);
+            });
+        }
+
+        function copyCurrentPrompt() {
+            if (!currentPromptContent) return;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(currentPromptContent).then(showToast).catch(err => fallbackCopyTextToClipboard(currentPromptContent));
+            } else {
+                fallbackCopyTextToClipboard(currentPromptContent);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) showToast();
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        let hasInteracted = false;
+
+        function playAudioOnFirstInteraction() {
+            if (hasInteracted) return;
+            hasInteracted = true;
+            
+            bgAudio.play().then(() => {
+                initVisualizer();
+                if(audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }).catch((err) => {
+                console.log("Autoplay masih terblokir, pengguna butuh interaksi yang lebih jelas.", err);
+                hasInteracted = false; 
+            });
+
+            document.removeEventListener('click', playAudioOnFirstInteraction);
+            document.removeEventListener('keydown', playAudioOnFirstInteraction);
+            document.removeEventListener('touchstart', playAudioOnFirstInteraction);
+        }
+
+        document.addEventListener('click', playAudioOnFirstInteraction);
+        document.addEventListener('keydown', playAudioOnFirstInteraction);
+        document.addEventListener('touchstart', playAudioOnFirstInteraction);
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('password').value.trim();
+            if (userDatabase["bangpro"].includes(pass)) {
+                sessionStorage.setItem('sessionToken', pass);
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('portal-page').classList.remove('hidden');
+                initExplorer();
+                if(bgAudio.paused) {
+                    bgAudio.play().then(() => initVisualizer()).catch(() => {});
+                }
+            } else {
+                document.getElementById('error-message').textContent = 'TOKEN INVALID!';
+            }
+        });
+
+        document.getElementById('logout-button').addEventListener('click', () => {
+            sessionStorage.removeItem('sessionToken');
+            location.reload();
+        });
+
+        document.getElementById('sound-toggle').addEventListener('click', () => {
+            bgAudio.muted = !bgAudio.muted;
+            document.getElementById('icon-sound-on').classList.toggle('hidden', bgAudio.muted);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', !bgAudio.muted);
+            if(!bgAudio.muted && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (!bgAudio.muted && bgAudio.paused) {
+                bgAudio.play().then(() => initVisualizer()).catch(() => {});
+            }
+        });
+
+        document.getElementById('volume-slider').addEventListener('input', (e) => {
+            bgAudio.volume = e.target.value;
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('sessionToken')) {
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('portal-page').classList.remove('hidden');
+                initExplorer();
+            }
+        });
+    </script>
+</body>
+</html>
